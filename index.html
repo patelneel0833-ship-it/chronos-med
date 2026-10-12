@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#07152f"><meta name="description" content="Chronos Med — your personal MBBS study operating system.">
+  <link rel="manifest" href="manifest.json"><link rel="apple-touch-icon" href="icon-192.png"><link rel="icon" href="icon.svg" type="image/svg+xml"><link rel="stylesheet" href="styles.css">
+  <title>Chronos Med — Study OS</title>
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar glass">
+    <a class="brand" href="#today" aria-label="Chronos Med home"><span class="brand-mark">C<span>+</span></span><span><b>chronos</b><small>MED · STUDY OS</small></span></a>
+    <div class="workspace-label">WORKSPACE</div>
+    <nav class="nav-list" aria-label="Main navigation">
+      <button class="nav-item active" data-view="today"><span class="nav-icon">◷</span>Today <kbd>1</kbd></button>
+      <button class="nav-item" data-view="planner"><span class="nav-icon">▦</span>Planner <kbd>2</kbd></button>
+      <button class="nav-item" data-view="subjects"><span class="nav-icon">◈</span>Subjects <kbd>3</kbd></button>
+      <button class="nav-item" data-view="revision"><span class="nav-icon">↻</span>Revision <kbd>4</kbd><i id="revisionBadge" class="nav-badge">0</i></button>
+      <button class="nav-item" data-view="analytics"><span class="nav-icon">▥</span>Analytics <kbd>5</kbd></button>
+    </nav>
+    <div class="sidebar-bottom">
+      <div class="focus-mini"><div class="mini-orb">◉</div><div><strong>Focus mode</strong><small id="miniTimer">Ready when you are</small></div><button id="miniStart" class="icon-btn" aria-label="Start focus timer">▶</button></div>
+      <button class="nav-item" data-view="settings"><span class="nav-icon">⚙</span>Settings</button>
+      <div class="profile"><div class="avatar">M</div><div><strong>Medical student</strong><small>Future physician ✦</small></div><span class="online-dot"></span></div>
+    </div>
+  </aside>
+  <main class="main-area">
+    <header class="topbar"><button id="mobileMenu" class="icon-btn mobile-menu" aria-label="Open navigation">☰</button><div class="breadcrumb"><span>Workspace</span><b>/</b><strong id="crumbTitle">Today</strong></div><div class="top-actions"><button id="searchBtn" class="search-trigger"><span>⌕</span> Search anything <kbd>⌘ K</kbd></button><button id="themeBtn" class="icon-btn" aria-label="Toggle theme">☼</button><button id="quickAdd" class="primary-btn"><span>＋</span> New session</button></div></header>
+    <div id="viewRoot" class="view-root"></div>
+    <footer class="footer"><span><span class="status-dot"></span> Your study space is saved on this device</span><span>Made for the long game <b>✦</b></span></footer>
+  </main>
+</div>
+<div id="toast" class="toast" role="status"></div>
+<div id="modalRoot"></div>
+<div id="commandOverlay" class="overlay hidden"><div class="command-box glass"><div class="command-input"><span>⌕</span><input id="commandInput" placeholder="What would you like to do?" autocomplete="off"><kbd>ESC</kbd></div><div class="command-hint">QUICK ACTIONS</div><button data-command="new">＋ Create a study session</button><button data-command="timer">◷ Start focus timer</button><button data-command="subjects">◈ Explore subjects</button><button data-command="revision">↻ Open revision queue</button></div></div>
+<script src="app.js"></script>
+</body></html>
