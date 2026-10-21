@@ -232,7 +232,13 @@ let S;try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
 S=Object.assign(def(),S||{});{const o=S.prefs||{};S.prefs=Object.assign(def().prefs,o);if(o.iv&&!o.ivs)S.prefs.ivs.h=o.iv.slice()}
 let V='today',D=today(),F='',SD=null,E=null,PI=0,drag=null,H=[],JA=null,JT=0;
 const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){toast('Could not save — storage full or blocked')}};
-const commit=()=>{save();render()};
+/* a revision cycle started by a First-study block disappears if that block is un-done, deleted or no longer a study block */
+function syncRev(){S.topics.forEach(t=>{if(!t.rev||!t.revSrc)return;const ok=x=>x&&x.done&&x.type==='study';if(ok(S.acts.find(x=>x.id===t.revSrc)))return;
+ const alt=S.acts.find(x=>x.tid===t.id&&ok(x));if(alt){t.revSrc=alt.id;return}
+ t.rev=null;t.revSrc=null;t.revDone=null;t.studied=null;if(t.st==='done')t.st=S.focus.some(f=>f.tid===t.id)?'ip':'ns';
+ if(t.hist){const k=t.hist.map(h=>h.r).lastIndexOf('studied');if(k>=0)t.hist.splice(k,1)}
+ S.acts=S.acts.filter(x=>!(x.tid===t.id&&x.type==='revision'&&!x.done&&x.rj!=null))})}
+const commit=()=>{syncRev();save();render()};
 const mut=f=>{H.push(JSON.stringify(S.acts));if(H.length>30)H.shift();f();save()};
 const undo=()=>{if(!H.length)return toast('Nothing to undo');S.acts=JSON.parse(H.pop());commit();toast('Undone')};
 const sub=id=>S.subjects.find(x=>x.id===id),tpc=id=>S.topics.find(x=>x.id===id);
@@ -246,7 +252,7 @@ const cmins=fn=>Math.round(credits().filter(fn).reduce((a,x)=>a+x.m,0));
 function afterDone(a,quiet){if(a&&a.done&&a.type==='revision'&&a.tid&&tpc(a.tid)&&tpc(a.tid).rev){if(!quiet)toast('Done — rate it in Revision');return}if(!a||!a.done||a.type!=='study'||!a.sid)return;let t=a.tid&&tpc(a.tid);
  if(!t){const n=(a.title||'').trim();if(!n)return;t=S.topics.find(x=>x.sid===a.sid&&x.n.toLowerCase()===n.toLowerCase());if(!t){t={id:uid(),sid:a.sid,pid:null,n,st:'ns',hist:[]};S.topics.push(t)}a.tid=t.id}
  t.st='done';t.studied=t.studied||a.date;if(a.df)applyDf(t,a.df);
- if(!t.rev&&ivs(t).length){t.rev={i:0,next:addD(a.date,ivs(t)[0])};(t.hist=t.hist||[]).push({d:a.date,r:'studied'});if(!quiet)toast('“'+tname(t)+'” added to Revision · due '+t.rev.next)}}
+ if(!t.rev&&ivs(t).length){t.rev={i:0,next:addD(a.date,ivs(t)[0])};t.revSrc=a.id;(t.hist=t.hist||[]).push({d:a.date,r:'studied'});if(!quiet)toast('“'+tname(t)+'” added to Revision · due '+t.rev.next)}}
 const NS=['break','meal'];
 const IC={today:'<path d="M12 3v3M4 9h16M5 5h14v15H5z"/><path d="M9 14l2 2 4-4"/>',planner:'<path d="M3 6h18M3 12h12M3 18h16"/>',subjects:'<path d="M4 5a2 2 0 012-2h13v16H6a2 2 0 00-2 2zM8 7h7"/>',revision:'<path d="M20 11a8 8 0 10-2.3 5.7M20 4v7h-7"/>',analytics:'<path d="M5 20V10M12 20V4M19 20v-7"/>',settings:'<circle cx="12" cy="12" r="3"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1"/>'};
 $('#nav').innerHTML='<div class="lg"><svg class="i" viewBox="0 0 24 24" style="stroke:#fff"><circle cx="12" cy="12" r="8"/><path d="M12 7v5l3 2"/></svg></div>'+Object.keys(IC).map(k=>`<button data-nav="${k}"><svg class="i" viewBox="0 0 24 24">${IC[k]}</svg>${k[0].toUpperCase()+k.slice(1)}</button>`).join('');
@@ -346,7 +352,7 @@ function vRev(){const td=today(),all=revInfo(),flt=l=>RF?l.filter(r=>r.t.sid===R
  sids=[...new Set([...all.due,...all.plan,...all.up].map(r=>r.t.sid))].map(sub).filter(Boolean),
  lab=d=>d===td?'Today':d===addD(td,1)?'Tomorrow':new Date(d+'T00:00').toLocaleDateString(undefined,{weekday:'short',day:'numeric',month:'short'}),
  ttl=t=>{const b=sub(t.sid);return b?`<em>${esc(b.n)}</em> – ${esc(t.n)}`:esc(t.n)},
- row=(r,x,btns)=>`<div class="rr" style="--c:${sub(r.t.sid)?.c||'#94a3b8'}"><div class="tt">${ttl(r.t)}<div class="mt"><span class="pl x${r.t.df||'h'}">${DFN[r.t.df||'h']}</span><span class="pl">R${r.j+1}/${r.L}</span>${x}</div></div><div class="bg">${btns}</div></div>`,
+ row=(r,x,btns)=>`<div class="rr" style="--c:${sub(r.t.sid)?.c||'#94a3b8'}"><div class="tt">${ttl(r.t)}<div class="mt"><span class="pl x${r.t.df||'h'}">${DFN[r.t.df||'h']}</span><span class="pl">R${r.j+1}/${r.L}</span>${x}</div></div><div class="bg">${btns}<button class="ap" style="opacity:.8" data-a="red" data-id="${r.t.id}">Edit</button><button class="ap" style="--c:#f87171;opacity:.9" data-a="rdel" data-id="${r.t.id}" aria-label="Delete revision">Delete</button></div></div>`,
  pb=r=>`<button class="ap" data-a="rsch" data-id="${r.t.id}" data-v="${r.j}" title="Add to planner">＋ Planner</button>`,
  K={again:'#f87171',hard:'#fb923c',good:'#34d399',easy:'#60a5fa'},
  upRow=r=>row(r,`in ${diff(td,r.date)}d`,pb(r)),
@@ -457,7 +463,13 @@ function act(a,id,v,el){switch(a){case'theme':setTheme(v);render();break;
  case'rsch':{const t=tpc(id),iv=ivs(t),i=Math.max(0,Math.min(iv.length-1,t.rev.i)),j=v===undefined||v===''?i:+v,dt=j===i?t.rev.next:addD(addD(t.rev.next,-iv[i]),iv[j]),d=dt>today()?dt:today(),s=findFree(d,30);openEd(null,{sid:t.sid,tid:t.id,title:'Revise: '+tname(t),type:'revision',rj:j,date:d,s,e:s+30});break}
  case'vpl':{const x=S.acts.find(y=>y.id===id);if(x){D=x.date;JA=x.id;clearTimeout(JT);JT=0;go('planner')}break}
  case'uns':mut(()=>S.acts=S.acts.filter(x=>x.id!==id));commit();toast('Moved back to Upcoming');break;
- case'rf':RF=v||'';render();break;case'rv':setRev(tpc(id),v);commit();break;case'pr':window._pl[+id][1]();if($('#pq'))closeMd();break;
+ case'rf':RF=v||'';render();break;
+ case'rdel':{const t=tpc(id);if(!t)break;ask('Delete the revision cycle for “'+tname(t)+'”? Its upcoming revisions and planner revision blocks will be removed.',()=>{t.rev=null;t.revSrc=null;t.revDone=null;S.acts=S.acts.filter(x=>!(x.tid===t.id&&x.type==='revision'&&!x.done&&x.rj!=null));commit();toast('Revision deleted')},'Delete');break}
+ case'red':{const t=tpc(id);if(!t||!t.rev)break;const L=ivs(t).length,cur=Math.min(L-1,t.rev.i);
+  $('#db').innerHTML=`<p style="margin-bottom:10px"><b>${esc(tname(t))}</b></p><label>Difficulty<select id="rdf">${DF.map(d=>`<option value="${d[0]}" ${d[0]===(t.df||'h')?'selected':''}>${d[1]}</option>`).join('')}</select></label><label>Stage<select id="rst">${Array.from({length:L},(_,k)=>`<option value="${k}" ${k===cur?'selected':''}>R${k+1}/${L}</option>`).join('')}</select></label><label>Next due<input type="date" id="rnx" value="${t.rev.next}"></label><div class="bt"><button class="pr" id="dy">Save</button><button class="gh" id="dn">Cancel</button></div>`;
+  $('#dlg').classList.add('on');$('#dn').onclick=closeDlg;
+  $('#rdf').onchange=()=>{const n=ivs({df:$('#rdf').value}).length;$('#rst').innerHTML=n?Array.from({length:n},(_,k)=>`<option value="${k}">R${k+1}/${n}</option>`).join(''):'<option value="0">—</option>'};
+  $('#dy').onclick=()=>{const df=$('#rdf').value,nx=$('#rnx').value;closeDlg();if(df==='n'){t.df='n';t.rev=null;t.revSrc=null;S.acts=S.acts.filter(x=>!(x.tid===t.id&&x.type==='revision'&&!x.done&&x.rj!=null))}else{applyDf(t,df);if(t.rev){const i=+$('#rst').value||0;t.rev={i:Math.min(i,ivs(t).length-1),next:/^\d{4}-\d\d-\d\d$/.test(nx)?nx:t.rev.next};S.acts.forEach(x=>{if(x.tid===t.id&&x.type==='revision'&&!x.done&&x.rj!=null&&x.rj<t.rev.i)delete x.rj})}}commit();toast('Revision updated')};break}case'rv':setRev(tpc(id),v);commit();break;case'pr':window._pl[+id][1]();if($('#pq'))closeMd();break;
  case'exp':exportData();break;case'imp':$('#fi').click();break;
  case'rst':ask('Erase ALL Chronos Med data in this browser?',()=>setTimeout(()=>ask('This cannot be undone. Erase everything?',()=>{S=def();H=[];SD=null;commit()},'Erase everything'),0),'Continue');break}}
 document.addEventListener('input',e=>{const t=e.target;if(t.id==='pq'){PI=0;openPal(t.value)}else if(t.id==='sq'||t.id==='so'){$('#sg').innerHTML=sgrid()}else if(t.id==='tn2'&&S.timer){S.timer.note=t.value;save()}});
@@ -616,3 +628,4 @@ addEventListener('pointermove',e=>{mx=e.clientX;my=e.clientY});addEventListener(
 colors();size();addEventListener('resize',()=>{size();if(rm)scene(0)});if(rm)scene(0);else loop(0);
 document.addEventListener('visibilitychange',()=>{if(rm)return;cancelAnimationFrame(raf);if(!document.hidden)loop(0)});setTheme(TH)})();
 </script></body></html>
+
